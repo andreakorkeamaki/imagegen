@@ -19,14 +19,22 @@ interface StableDiffusionInput {
   // Add other parameters as needed based on the specific Stable Diffusion model version
 }
 
+// Define the expected input structure for Recraft
+interface RecraftInput {
+  prompt: string;
+  style?: string;
+  size?: string;
+  negative_prompt?: string;
+}
+
 // Define supported model types
 type ModelType = 'sdxl' | 'recraft-v3';
 
 // Model versions - these need to match Replicate's format
-const MODELS: Record<ModelType, string> = {
+const MODELS = {
   // Updated to the latest public versions
   sdxl: "stability-ai/sdxl:c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
-  "recraft-v3": "recraft-ai/recraft-v3:0jhy3g0nb9rge0cjvct6dg8jc"
+  "recraft-v3": "recraft-ai/recraft-v3" // No version ID needed for Recraft
 };
 
 export async function POST(request: Request) {
@@ -47,29 +55,42 @@ export async function POST(request: Request) {
     }
 
     // Type check for the model
-    if (!Object.keys(MODELS).includes(model)) {
+    if (!(model in MODELS)) {
       return NextResponse.json({ error: "Invalid model selected." }, { status: 400 });
     }
 
     const selectedModel = model as ModelType;
     console.log("Received request for image generation:", { prompt, negative_prompt, width, height, model: selectedModel });
 
-    // Get the model version based on the selected model
-    const modelVersion = MODELS[selectedModel];
-
-    const input: StableDiffusionInput = {
-      prompt,
-      negative_prompt,
-      width,
-      height,
-    };
-
-    console.log("Calling Replicate API with input:", input);
-    console.log("Using model:", selectedModel, modelVersion);
-
-    // Run the model - use type assertion to satisfy TypeScript
-    // The Replicate library expects a specific format but we've verified our strings match that format
-    const output = await replicate.run(modelVersion as any, { input });
+    let output;
+    
+    // Different handling based on model type
+    if (selectedModel === 'sdxl') {
+      // SDXL input format
+      const input: StableDiffusionInput = {
+        prompt,
+        negative_prompt,
+        width,
+        height,
+      };
+      
+      console.log("Calling Replicate API with SDXL input:", input);
+      // Use type assertion to satisfy TypeScript
+      output = await replicate.run(MODELS.sdxl as any, { input });
+    } else if (selectedModel === 'recraft-v3') {
+      // Recraft input format
+      const size = `${width}x${height}`;
+      const input: RecraftInput = {
+        prompt,
+        negative_prompt,
+        size,
+        style: "any" // Default style
+      };
+      
+      console.log("Calling Replicate API with Recraft input:", input);
+      // Use type assertion to satisfy TypeScript
+      output = await replicate.run(MODELS["recraft-v3"] as any, { input });
+    }
 
     console.log("Replicate API output:", output);
 
