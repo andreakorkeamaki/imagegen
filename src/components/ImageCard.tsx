@@ -7,9 +7,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface ImageCardProps {
   image: StoredImageData;
   onSelect?: (image: StoredImageData) => void; // Optional: For viewing details
+  onDownload?: (image: StoredImageData) => void; // Optional: For downloading image
 }
 
-const ImageCard: React.FC<ImageCardProps> = ({ image, onSelect }) => {
+const ImageCard: React.FC<ImageCardProps> = ({ image, onSelect, onDownload }) => {
   const timeAgo = formatDistanceToNow(new Date(image.timestamp), { addSuffix: true });
   
   // Get a display name for the model
@@ -22,10 +23,21 @@ const ImageCard: React.FC<ImageCardProps> = ({ image, onSelect }) => {
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent click from bubbling to parent when clicking download button
+    e.stopPropagation();
+    onSelect?.(image);
+  };
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    onDownload?.(image);
+  };
+
   return (
     <div
       className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100 shadow cursor-pointer transition-transform hover:scale-105"
-      onClick={() => onSelect?.(image)} // Trigger select action if provided
+      onClick={handleClick}
     >
       <img
         src={image.imageUrl}
@@ -38,6 +50,18 @@ const ImageCard: React.FC<ImageCardProps> = ({ image, onSelect }) => {
           {getModelDisplayName(image.model)}
         </div>
       )}
+      {/* Download button */}
+      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleDownload}
+          className="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-full shadow-md transition-colors"
+          aria-label="Download image"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+      </div>
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <p className="text-white text-xs font-medium truncate" title={image.prompt}>
           {image.prompt}

@@ -11,15 +11,22 @@ interface ImageDisplayProps {
 }
 
 const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isLoading, error, prompt, model }) => {
+  // Function to open image in new tab for full view
+  const handleViewFullSize = () => {
+    if (imageUrl) {
+      window.open(imageUrl, '_blank');
+    }
+  };
+
   return (
-    <div className="aspect-square w-full bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner min-h-[300px] md:min-h-[400px] lg:min-h-[512px]">
+    <div className="aspect-square w-full bg-sky-100 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner min-h-[300px] md:min-h-[400px] lg:min-h-[512px]">
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-400 bg-opacity-50 z-10">
-          <svg className="animate-spin h-10 w-10 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-sky-400 bg-opacity-50 z-10">
+          <svg className="animate-spin h-10 w-10 text-sky-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <p className="text-indigo-700 font-medium">Generating Image...</p>
+          <p className="text-sky-700 font-medium">Generating Image...</p>
           {/* Add real-time progress here if available from API */}
         </div>
       )}
@@ -36,6 +43,18 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isLoading, error,
             className="object-contain w-full h-full"
             // Add onLoad/onError handlers if needed for better UX
           />
+          <div className="absolute top-2 left-2 flex space-x-2">
+            <button 
+              onClick={handleViewFullSize}
+              className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded flex items-center hover:bg-opacity-90 transition-opacity"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              View Full Size
+            </button>
+          </div>
           {model && (
             <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
               {model === 'sdxl' ? 'Stable Diffusion XL' : model === 'recraft-v3' ? 'Recraft V3' : model}

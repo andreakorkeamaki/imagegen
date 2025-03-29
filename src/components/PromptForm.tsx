@@ -1,22 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface PromptFormProps {
   onSubmit: (prompt: string, negativePrompt: string, width: number, height: number, model: string) => void;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
-  const [prompt, setPrompt] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState('');
-  const [resolution, setResolution] = useState('512x512');
-  const [model, setModel] = useState('sdxl');
+// Common resolutions for image generation
+const RESOLUTIONS = [
+  { width: 512, height: 512, label: '512×512' },
+  { width: 768, height: 768, label: '768×768' },
+  { width: 1024, height: 1024, label: '1024×1024' },
+  { width: 512, height: 768, label: '512×768' },
+  { width: 768, height: 512, label: '768×512' },
+  { width: 1024, height: 768, label: '1024×768' },
+  { width: 768, height: 1024, label: '768×1024' },
+];
+
+const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading = false }) => {
+  const [prompt, setPrompt] = useState<string>('');
+  const [negativePrompt, setNegativePrompt] = useState<string>('');
+  const [width, setWidth] = useState<number>(512);
+  const [height, setHeight] = useState<number>(512);
+  const [model, setModel] = useState<string>('sdxl');
+
+  // Handle resolution selection
+  const handleResolutionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const [w, h] = e.target.value.split('x').map(Number);
+    setWidth(w);
+    setHeight(h);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const [width, height] = resolution.split('x').map(Number);
-    onSubmit(prompt, negativePrompt, width, height, model);
+    if (prompt.trim()) {
+      onSubmit(prompt, negativePrompt, width, height, model);
+    }
   };
 
   return (
@@ -27,13 +47,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
         </label>
         <textarea
           id="prompt"
-          name="prompt"
-          rows={3}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          placeholder="e.g., A photo of an astronaut riding a horse on the moon"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          placeholder="e.g., A photo of an astronaut riding a horse on the moon"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+          rows={3}
           required
+          disabled={isLoading}
         />
       </div>
 
@@ -41,14 +61,14 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
         <label htmlFor="negativePrompt" className="block text-sm font-medium text-gray-700 mb-1">
           Negative Prompt (Optional)
         </label>
-        <input
-          type="text"
+        <textarea
           id="negativePrompt"
-          name="negativePrompt"
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          placeholder="e.g., blurry, low quality, text, watermark"
           value={negativePrompt}
           onChange={(e) => setNegativePrompt(e.target.value)}
+          placeholder="e.g., blurry, low quality, text, watermark"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+          rows={2}
+          disabled={isLoading}
         />
       </div>
 
@@ -59,10 +79,10 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
           </label>
           <select
             id="model"
-            name="model"
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             value={model}
             onChange={(e) => setModel(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+            disabled={isLoading}
           >
             <option value="sdxl">Stable Diffusion XL</option>
             <option value="recraft-v3">Recraft V3</option>
@@ -75,21 +95,23 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
           </label>
           <select
             id="resolution"
-            name="resolution"
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            value={resolution}
-            onChange={(e) => setResolution(e.target.value)}
+            value={`${width}x${height}`}
+            onChange={handleResolutionChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+            disabled={isLoading}
           >
-            <option value="512x512">512x512</option>
-            <option value="1024x1024">1024x1024</option>
-            {/* Add other supported resolutions if needed */}
+            {RESOLUTIONS.map((res) => (
+              <option key={res.label} value={`${res.width}x${res.height}`}>
+                {res.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       <button
         type="submit"
-        className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading || !prompt.trim()}
       >
         {isLoading ? 'Generating...' : 'Generate Image'}

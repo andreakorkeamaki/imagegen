@@ -26,7 +26,7 @@ type ModelType = 'sdxl' | 'recraft-v3';
 const MODELS: Record<ModelType, string> = {
   // Updated to the latest public versions
   sdxl: "stability-ai/sdxl:c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
-  "recraft-v3": "recraft-ai/recraft-v3:c6ad29f50f9e73e6ea51cef5b6077ae1d3b6b0a5c5b8116076d27c4c28c0d8c9"
+  "recraft-v3": "recraft-ai/recraft-v3:0jhy3g0nb9rge0cjvct6dg8jc"
 };
 
 export async function POST(request: Request) {

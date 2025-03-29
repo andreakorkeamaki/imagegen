@@ -74,10 +74,23 @@ export default function Home() {
     }
   }, []); // No dependencies needed if state setters are used
 
+  // Function to handle image download
+  const handleDownload = useCallback(() => {
+    if (!imageUrl) return;
+    
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `ai-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [imageUrl]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-16 bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+    <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-16 bg-gradient-to-br from-blue-50 via-white to-sky-100">
       <div className="w-full max-w-5xl space-y-8">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-indigo-700">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-sky-600">
           AI Image Generator
         </h1>
 
@@ -88,7 +101,20 @@ export default function Home() {
 
         {/* Display Section */}
         <section className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
-          <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Generated Image</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-700">Generated Image</h2>
+            {imageUrl && (
+              <button 
+                onClick={handleDownload}
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-md transition-colors flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download
+              </button>
+            )}
+          </div>
           <ImageDisplay 
             imageUrl={imageUrl} 
             isLoading={isLoading} 
@@ -96,7 +122,6 @@ export default function Home() {
             prompt={lastPrompt} 
             model={lastModel}
           />
-          {/* TODO: Add Download Button Here */}
         </section>
 
         {/* Gallery Section */}
