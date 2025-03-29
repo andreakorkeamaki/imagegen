@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 interface PromptFormProps {
-  onSubmit: (prompt: string, negativePrompt: string, width: number, height: number) => void;
+  onSubmit: (prompt: string, negativePrompt: string, width: number, height: number, model: string) => void;
   isLoading: boolean;
 }
 
@@ -11,11 +11,12 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [resolution, setResolution] = useState('512x512');
+  const [model, setModel] = useState('sdxl');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const [width, height] = resolution.split('x').map(Number);
-    onSubmit(prompt, negativePrompt, width, height);
+    onSubmit(prompt, negativePrompt, width, height, model);
   };
 
   return (
@@ -51,21 +52,39 @@ const PromptForm: React.FC<PromptFormProps> = ({ onSubmit, isLoading }) => {
         />
       </div>
 
-      <div>
-        <label htmlFor="resolution" className="block text-sm font-medium text-gray-700 mb-1">
-          Resolution
-        </label>
-        <select
-          id="resolution"
-          name="resolution"
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={resolution}
-          onChange={(e) => setResolution(e.target.value)}
-        >
-          <option value="512x512">512x512</option>
-          <option value="1024x1024">1024x1024</option>
-          {/* Add other supported resolutions if needed */}
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">
+            Model
+          </label>
+          <select
+            id="model"
+            name="model"
+            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          >
+            <option value="sdxl">Stable Diffusion XL</option>
+            <option value="recraft-v3">Recraft V3</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="resolution" className="block text-sm font-medium text-gray-700 mb-1">
+            Resolution
+          </label>
+          <select
+            id="resolution"
+            name="resolution"
+            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            value={resolution}
+            onChange={(e) => setResolution(e.target.value)}
+          >
+            <option value="512x512">512x512</option>
+            <option value="1024x1024">1024x1024</option>
+            {/* Add other supported resolutions if needed */}
+          </select>
+        </div>
       </div>
 
       <button

@@ -11,25 +11,27 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastPrompt, setLastPrompt] = useState<string>(''); // Store last prompt for display/saving
+  const [lastModel, setLastModel] = useState<string>('sdxl'); // Store last model used
 
   // Key to force gallery re-render when new image is added
   // This is a simple way; Context or Zustand would be better for complex state
   const [galleryUpdateKey, setGalleryUpdateKey] = useState(0);
 
-  const handleGenerate = useCallback(async (prompt: string, negativePrompt: string, width: number, height: number) => {
+  const handleGenerate = useCallback(async (prompt: string, negativePrompt: string, width: number, height: number, model: string) => {
     setIsLoading(true);
     setError(null);
     setImageUrl(null);
     setLastPrompt(prompt); // Store the prompt
+    setLastModel(model); // Store the model
 
     try {
-      console.log('Sending request:', { prompt, negativePrompt, width, height });
+      console.log('Sending request:', { prompt, negativePrompt, width, height, model });
       const response = await fetch('/api/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt, negative_prompt: negativePrompt, width, height }),
+        body: JSON.stringify({ prompt, negative_prompt: negativePrompt, width, height, model }),
       });
 
       const responseBody = await response.json(); // Always try to parse body
@@ -53,7 +55,7 @@ export default function Home() {
         negativePrompt,
         width,
         height,
-        // model: 'Stable Diffusion' // You might get this from API if needed
+        model // Store which model was used
       });
 
       if (savedImage) {
@@ -87,7 +89,13 @@ export default function Home() {
         {/* Display Section */}
         <section className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
           <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Generated Image</h2>
-          <ImageDisplay imageUrl={imageUrl} isLoading={isLoading} error={error} prompt={lastPrompt} />
+          <ImageDisplay 
+            imageUrl={imageUrl} 
+            isLoading={isLoading} 
+            error={error} 
+            prompt={lastPrompt} 
+            model={lastModel}
+          />
           {/* TODO: Add Download Button Here */}
         </section>
 
