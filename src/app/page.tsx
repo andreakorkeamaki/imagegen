@@ -1,47 +1,101 @@
-import Link from "next/link";
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import PromptForm from '@/components/PromptForm';
+import ImageDisplay from '@/components/ImageDisplay';
+import ImageGallery from '@/components/ImageGallery';
+import { addStoredImage, StoredImageData } from '@/lib/storage';
 
 export default function Home() {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastPrompt, setLastPrompt] = useState<string>(''); // Store last prompt for display/saving
+
+  // Key to force gallery re-render when new image is added
+  // This is a simple way; Context or Zustand would be better for complex state
+  const [galleryUpdateKey, setGalleryUpdateKey] = useState(0);
+
+  const handleGenerate = useCallback(async (prompt: string, negativePrompt: string, width: number, height: number) => {
+    setIsLoading(true);
+    setError(null);
+    setImageUrl(null);
+    setLastPrompt(prompt); // Store the prompt
+
+    try {
+      console.log('Sending request:', { prompt, negativePrompt, width, height });
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, negative_prompt: negativePrompt, width, height }),
+      });
+
+      const responseBody = await response.json(); // Always try to parse body
+      console.log('Received response:', response.status, responseBody);
+
+      if (!response.ok) {
+        throw new Error(responseBody.error || `HTTP error! status: ${response.status}`);
+      }
+
+      if (!responseBody.imageUrl) {
+          throw new Error('No image URL received from server.');
+      }
+
+      const generatedImageUrl = responseBody.imageUrl;
+      setImageUrl(generatedImageUrl);
+
+      // Save to gallery
+      const savedImage = addStoredImage({
+        imageUrl: generatedImageUrl,
+        prompt,
+        negativePrompt,
+        width,
+        height,
+        // model: 'Stable Diffusion' // You might get this from API if needed
+      });
+
+      if (savedImage) {
+        console.log('Image saved to gallery', savedImage);
+        // Trigger gallery update
+        setGalleryUpdateKey(prev => prev + 1);
+      } else {
+          console.warn('Failed to save image to local storage');
+      }
+
+    } catch (err: any) {
+      console.error("Generation failed:", err);
+      setError(err.message || 'Failed to generate image.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // No dependencies needed if state setters are used
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-8 bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      <div>
-        <h2 className="text-2xl font-semibold text-center border border-blue-300 p-4 font-mono rounded-md text-blue-700">
-          Get started by choosing a template path from the /paths/ folder.
-        </h2>
-      </div>
-      <div>
-        <h1 className="text-6xl font-bold text-center text-blue-700">Make anything you imagine 🪄</h1>
-        <h2 className="text-2xl text-center font-light text-blue-500 pt-4">
-          This whole page will be replaced when you run your template path.
-        </h2>
-      </div>
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="border border-blue-200 rounded-lg p-6 hover:bg-blue-50 transition-colors">
-          <h3 className="text-xl font-semibold text-blue-800">AI Chat App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            An intelligent conversational app powered by AI models, featuring real-time responses
-            and seamless integration with Next.js and various AI providers.
-          </p>
-        </div>
-        <div className="border border-blue-200 rounded-lg p-6 hover:bg-blue-50 transition-colors">
-          <h3 className="text-xl font-semibold text-blue-800">AI Image Generation App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Create images from text prompts using AI, powered by the Replicate API and Next.js.
-          </p>
-        </div>
-        <div className="border border-blue-200 rounded-lg p-6 hover:bg-blue-50 transition-colors">
-          <h3 className="text-xl font-semibold text-blue-800">Social Media App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            A feature-rich social platform with user profiles, posts, and interactions using
-            Firebase and Next.js.
-          </p>
-        </div>
-        <div className="border border-blue-200 rounded-lg p-6 hover:bg-blue-50 transition-colors">
-          <h3 className="text-xl font-semibold text-blue-800">Voice Notes App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            A voice-based note-taking app with real-time transcription using Deepgram API,
-            Firebase integration for storage, and a clean, simple interface built with Next.js.
-          </p>
-        </div>
+    <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-16 bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      <div className="w-full max-w-5xl space-y-8">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-indigo-700">
+          AI Image Generator
+        </h1>
+
+        {/* Input Section */}
+        <section className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
+          <PromptForm onSubmit={handleGenerate} isLoading={isLoading} />
+        </section>
+
+        {/* Display Section */}
+        <section className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Generated Image</h2>
+          <ImageDisplay imageUrl={imageUrl} isLoading={isLoading} error={error} prompt={lastPrompt} />
+          {/* TODO: Add Download Button Here */}
+        </section>
+
+        {/* Gallery Section */}
+        <section className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Image History</h2>
+          <ImageGallery key={galleryUpdateKey} /> {/* Use key to force re-render */}
+        </section>
       </div>
     </main>
   );
